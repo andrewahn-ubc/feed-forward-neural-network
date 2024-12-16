@@ -9,4 +9,4 @@ I'll flesh out this section with what design choices I made once I've finished b
 
 ## Some goals
 - Once the implementation is done, test it on the MNIST hand-written digits dataset and get a relatively high accuracy (anything >80%).
-- Explore some fun deep learning techniques (learning rate schedules, early stopping, different gradient descent variations, hyperparameter tuning, etc.).
+- Explore some fun deep learning techniques (learning rate schedules, early stopping, different gradient descent variations, hyperparameter tuning, different initializtion methods, etc.).
