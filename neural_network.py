@@ -37,18 +37,20 @@ class NeuralNetwork():
     # Output: the gradient vector for the given set of images  - as an array of size 13,002 containing doubles
     # Usage: To be called on a "batch" of training images to find the next gradient descent step.
     def backpropagation(self, trainingData):
+        # gradientVectors is a 2D array, where each row will be a single gradient vector 
         gradientVectors = np.array([])
 
+        # finding the gradient vector for each training example
         for image in trainingData:
             target = trainingData[image]
             gradientVectorForThisImage = self.backpropOneImage(image, target)
             gradientVectors = np.vstack([gradientVectors, gradientVectorForThisImage])
-        
-        # gradientVectors is now a 2D array, where each row is a single gradient vector
 
-        # time to find the average then scale it to find out overall gradient vector!!
+        # find the average gradient vector then scale it to find out overall gradient 
+        averageGradient = np.mean(gradientVectors, axis=0)
+        scaledAverageGradient = averageGradient * 1.0   # EDIT THIS based on the learning rate strategy
 
-        
+        return scaledAverageGradient
         
     # Function: Helper function to take in the output of backpropagation and convert it 
     #           to a form that is easier to work with when updating the parameters
