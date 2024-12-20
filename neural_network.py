@@ -6,7 +6,6 @@ class NeuralNetwork():
     # Sets up the anatomy of the neural network
     def __init__(self):
         # The neurons
-        self.inputNeuronLayer = np.random.random(784)
         self.firstHiddenNeuronLayer = np.random.random(16)
         self.secondHiddenNeuronLayer = np.random.random(16)
         self.outputNeuronLayer = np.random.random(10)
@@ -21,6 +20,16 @@ class NeuralNetwork():
         self.secondBiasVector = np.random.random(16)
         self.thirdBiasVector = np.random.random(10)
 
+    # Function: "Squishes" the domain of a vector from (-inf, inf) to something smaller and
+    #           more manageable, like [0,1] for the sigmoid function. The actual new domain will 
+    #           depend on which function I end up choosing (TBD).
+    # Input: A vector.
+    # Output: A vector. 
+    # Usage: To be used during forward-propagation.
+    def squishification(bigVector):
+        # TODO: implement a squishification function (maybe sigmoid)
+        return bigVector
+
     # Function: Propagates the input values "forward" through the neural network and changes the 
     #           activations in the hidden layers and the output layer.
     # Input: A single image - an array of size 784 containing doubles, and
@@ -29,7 +38,17 @@ class NeuralNetwork():
     # Usage: To be used before performing backpropagation on a single image. 
     #        Will be called once per image for each gradient descent step.
     def forward(self, image):
-        pass
+        np.matmul(self.firstWeightMatrix, image, self.firstHiddenNeuronLayer)
+        self.firstHiddenNeuronLayer += self.firstBiasVector
+        self.firstHiddenNeuronLayer = self.squishification(self.firstHiddenNeuronLayer)
+
+        np.matmul(self.secondWeightMatrix, self.firstHiddenNeuronLayer, self.secondHiddenNeuronLayer)
+        self.secondHiddenNeuronLayer += self.secondBiasVector
+        self.secondHiddenNeuronLayer = self.squishification(self.secondHiddenNeuronLayer)
+
+        np.matmul(self.thirdWeightMatrix, self.secondHiddenNeuronLayer, self.outputNeuronLayer)
+        self.outputNeuronLayer += self.thirdBiasVector
+        self.outputNeuronLayer = self.squishification(self.outputNeuronLayer)
 
     # Function: The "heart" of the backpropagation algorithm, performed on a single training example
     # Input: A single image - an array of size 784 containing doubles, and
