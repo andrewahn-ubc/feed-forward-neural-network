@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 # The neural network class. Contains all the functions related to 
 # a neural network instance, such as backpropagation.
@@ -26,9 +27,11 @@ class NeuralNetwork():
     # Input: A vector.
     # Output: A vector. 
     # Usage: To be used during forward-propagation.
-    def squishification(bigVector):
+    def squishification(vector):
         # TODO: implement a squishification function (maybe sigmoid)
-        return bigVector
+        sigmoid = lambda x: 1/(1 + math.exp(-x))
+        vectorizedSigmoid = np.vectorize(sigmoid)
+        return vectorizedSigmoid(vector)
 
     # Function: Propagates the input values "forward" through the neural network and changes the 
     #           activations in the hidden layers and the output layer.
