@@ -59,6 +59,7 @@ class NeuralNetwork():
     # Output: The gradient vector for the single image - as an array of size 13,002 containing doubles.
     # Usage: To be called on every single training example by the main backpropagation function.
     def backpropOneImage(self, image, target):
+        # found the derivative of the sigmoid function f(x) to be f'(x) = exp(-x)/(1 + exp(-x))^2
         pass
 
     # Function: Facilitates backpropagation by calling the backpropOneImage function on 
