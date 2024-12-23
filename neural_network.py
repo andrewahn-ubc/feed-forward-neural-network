@@ -11,6 +11,11 @@ class NeuralNetwork():
         self.secondHiddenNeuronLayer = np.random.random(16)
         self.outputNeuronLayer = np.random.random(10)
 
+        # The neurons pre-squish (this gives us access to z = a1w1 + a2w2 + ... + b)
+        self.firstHiddenNeuronLayerPS = np.random.random(16)
+        self.secondHiddenNeuronLayerPS = np.random.random(16)
+        self.outputNeuronLayerPS = np.random.random(10)
+
         # The weights
         self.firstWeightMatrix = np.random.random((16,784))
         self.secondWeightMatrix = np.random.random((16,16))
@@ -21,17 +26,22 @@ class NeuralNetwork():
         self.secondBiasVector = np.random.random(16)
         self.thirdBiasVector = np.random.random(10)
 
-    # Function: "Squishes" the domain of a vector from (-inf, inf) to something smaller and
-    #           more manageable, like [0,1] for the sigmoid function. The actual new domain will 
-    #           depend on which function I end up choosing (TBD).
+    # Function: "Squishes" the domain of a vector from (-inf, inf) to [0,1] using the sigmoid function. 
     # Input: A vector.
     # Output: A vector. 
     # Usage: To be used during forward-propagation.
-    def squishification(vector):
-        # TODO: implement a squishification function (maybe sigmoid)
+    def sigmoidVector(vector):
         sigmoid = lambda x: 1/(1 + math.exp(-x))
         vectorizedSigmoid = np.vectorize(sigmoid)
         return vectorizedSigmoid(vector)
+    
+    # Function: Sigmoid function for a single number.
+    def sigmoid(x):
+        return 1/(1 + math.exp(-x))
+    
+    # Function: The derivate of the sigmoid function for a single number.
+    def sigmoidDerivative(x):
+        return math.exp(-x)/(1 + math.exp(-x))^2
 
     # Function: Propagates the input values "forward" through the neural network and changes the 
     #           activations in the hidden layers and the output layer.
@@ -43,24 +53,61 @@ class NeuralNetwork():
     def forward(self, image):
         np.matmul(self.firstWeightMatrix, image, self.firstHiddenNeuronLayer)
         self.firstHiddenNeuronLayer += self.firstBiasVector
-        self.firstHiddenNeuronLayer = self.squishification(self.firstHiddenNeuronLayer)
+        self.firstHiddenNeuronLayerPS = self.firstHiddenNeuronLayer
+        self.firstHiddenNeuronLayer = self.sigmoidVector(self.firstHiddenNeuronLayer)
 
         np.matmul(self.secondWeightMatrix, self.firstHiddenNeuronLayer, self.secondHiddenNeuronLayer)
         self.secondHiddenNeuronLayer += self.secondBiasVector
-        self.secondHiddenNeuronLayer = self.squishification(self.secondHiddenNeuronLayer)
+        self.secondHiddenNeuronLayerPS = self.secondHiddenNeuronLayer
+        self.secondHiddenNeuronLayer = self.sigmoidVector(self.secondHiddenNeuronLayer)
 
         np.matmul(self.thirdWeightMatrix, self.secondHiddenNeuronLayer, self.outputNeuronLayer)
         self.outputNeuronLayer += self.thirdBiasVector
-        self.outputNeuronLayer = self.squishification(self.outputNeuronLayer)
+        self.outputNeuronLayerPS = self.outputNeuronLayer
+        self.outputNeuronLayer = self.sigmoidVector(self.outputNeuronLayer)
 
     # Function: The "heart" of the backpropagation algorithm, performed on a single training example
     # Input: A single image - an array of size 784 containing doubles, and
-    #        the target number that is drawn in the image.
+    #        the target integer in [0,9] that is drawn in the image.
     # Output: The gradient vector for the single image - as an array of size 13,002 containing doubles.
     # Usage: To be called on every single training example by the main backpropagation function.
     def backpropOneImage(self, image, target):
-        # found the derivative of the sigmoid function f(x) to be f'(x) = exp(-x)/(1 + exp(-x))^2
-        pass
+        self.forward(image)
+
+        # set up the vectors and matrices for the partial derivatives
+        biasesGradient_lastLayer = np.empty(10)
+        weightsGradient_lastLayer = np.empty((10,16))
+        activationsGradientCollection_lastLayer = np.empty((10,16))   # where each row is the set of changes to the neurons in the
+                                                                      # second last layer that a single neuron in the last layer
+                                                                      # would like to make
+
+        # correct output
+        correct = np.zeros(10)
+        correct[target] = 1
+
+        # calculate how you'd want to "nudge" the weights, biases, and activations in the last layer
+        for index_L, a_L in enumerate(self.outputNeuronLayer):
+            # pd is short for partial derivative.
+            z = self.outputNeuronLayerPS[index_L]
+            pdForBias = 2*(a_L - correct[index_L])*self.sigmoidDerivative(z)
+            biasesGradient_lastLayer[index_L] = pdForBias
+
+            weightPDsForThisNeuron = np.empty(16)
+            activationPDsForThisNeuron = np.empty(16)
+            for index_Lm1, a_Lm1 in enumerate(self.secondHiddenNeuronLayer):
+                # TODO: figure out whether it should be correct[index] - a_L instead
+                pdForWeight = pdForBias*a_Lm1
+                weightPDsForThisNeuron[index_Lm1] = pdForWeight
+
+                pdForActivation = pdForBias*self.thirdWeightMatrix[index_L,index_Lm1]
+                activationPDsForThisNeuron[index_Lm1] = pdForActivation
+            weightsGradient_lastLayer[index_L] = weightPDsForThisNeuron
+            activationsGradientCollection_lastLayer[index_L] = activationPDsForThisNeuron
+
+        activationsGradientAverage_lastLayer = np.mean(activationsGradientCollection_lastLayer, axis=0)
+
+        # backpropagation for one layer complete!
+
 
     # Function: Facilitates backpropagation by calling the backpropOneImage function on 
     #           each training example, then averaging out and scaling the resulting gradient vectors
@@ -81,7 +128,7 @@ class NeuralNetwork():
 
         # find the average gradient vector then scale it to find out overall gradient 
         averageGradient = np.mean(gradientVectors, axis=0)
-        scaledAverageGradient = averageGradient * 1.0   # EDIT THIS based on the learning rate strategy
+        scaledAverageGradient = averageGradient * 1.0   # TODO: EDIT THIS based on the learning rate strategy
 
         return scaledAverageGradient
         
