@@ -89,7 +89,7 @@ class NeuralNetwork():
         for index_L, a_L in enumerate(self.outputNeuronLayer):
             # pd is short for partial derivative.
             z = self.outputNeuronLayerPS[index_L]
-            pdForBias = 2*(a_L - correct[index_L])*self.sigmoidDerivative(z)
+            pdForBias = 2*(a_L - correct[index_L])*self.sigmoidDerivative(z)        
             biasesGradient_lastLayer[index_L] = pdForBias
 
             weightPDsForThisNeuron = np.empty(16)
@@ -106,7 +106,31 @@ class NeuralNetwork():
 
         activationsGradientAverage_lastLayer = np.mean(activationsGradientCollection_lastLayer, axis=0)
 
-        # backpropagation for one layer complete!
+        biasesGradient_2ndLastLayer = np.empty(10)
+        weightsGradient_2ndLastLayer = np.empty((16,16))
+        activationsGradientCollection_2ndLastLayer = np.empty((16,16))
+
+        # calculate how you'd want to "nudge" the weights, biases, and activations in the last layer
+        for index_L, a_L in enumerate(self.secondHiddenNeuronLayer):
+            # pd is short for partial derivative.
+            z = self.secondHiddenNeuronLayerPS[index_L]
+            pdForBias = 2*(activationsGradientAverage_lastLayer[index_L])*self.sigmoidDerivative(z)
+            biasesGradient_2ndLastLayer[index_L] = pdForBias
+
+            weightPDsForThisNeuron = np.empty(16)
+            activationPDsForThisNeuron = np.empty(16)
+            for index_Lm1, a_Lm1 in enumerate(self.firstHiddenNeuronLayer):
+                pdForWeight = pdForBias*a_Lm1
+                weightPDsForThisNeuron[index_Lm1] = pdForWeight
+
+                pdForActivation = pdForBias*self.secondWeightMatrix[index_L,index_Lm1]
+                activationPDsForThisNeuron[index_Lm1] = pdForActivation
+            weightsGradient_2ndLastLayer[index_L] = weightPDsForThisNeuron
+            activationsGradientCollection_2ndLastLayer[index_L] = activationPDsForThisNeuron
+
+        # backpropagation for two layers (somewhat) complete! 
+        # For now, pretended like the second hidden layer also used the same Cost function as the output layer,
+        # and the partial derivatives for the activations were the error values. Might have to update this after some more research.
 
 
     # Function: Facilitates backpropagation by calling the backpropOneImage function on 
