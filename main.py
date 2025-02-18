@@ -1,20 +1,40 @@
 from neural_network import NeuralNetwork
 import numpy as np
+from os.path import join
+from data_loader import MnistDataloader
 
 # Main file that will interact with the neural network and the data.
 # Does NOT contain any functionality that is inherently fundamental to the functionality of an NN 
 # (ie. SGD, backprop, etc.). 
 # Contains minimal functionality - mainly setting up the neural network and running it on training data.
 
+def load_data():
+    #
+    # Set file paths based on added MNIST Datasets
+    #
+    input_path = '/Users/andrewahn/Downloads/data'
+    training_images_filepath = join(input_path, 'train-images-idx3-ubyte/train-images-idx3-ubyte')
+    training_labels_filepath = join(input_path, 'train-labels-idx1-ubyte/train-labels-idx1-ubyte')
+    test_images_filepath = join(input_path, 't10k-images-idx3-ubyte/t10k-images-idx3-ubyte')
+    test_labels_filepath = join(input_path, 't10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte')
+
+    #
+    # Load MINST dataset
+    #
+    mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
+    (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data()
+
+    return x_train, y_train, x_test, y_test
+
 def main():
     # TODO: load MNIST dataset and split into training and testing datasets.
+    X_train, y_train, X_test, y_test = load_data()
     # TODO: test the neural network using the testing dataset.
 
-    # Prep dummy data 
-    X_train = np.random.random((105, 784))  # training data size will be a multiple of the batch size so some of these might not get used
-    y_train = np.ones(105)
-    X_test = np.random.random((12, 784))
-    y_test = np.ones(12)
+    X_train = np.array(X_train)     # shape (60000, 28, 28)
+    y_train = np.array(y_train)     # shape (60000,)
+    X_test = np.array(X_test)       # shape (10000, 28, 28)
+    y_test = np.array(y_test)       # shape (10000,)
 
     model = NeuralNetwork()
     model.fit(X_train, y_train)
