@@ -35,9 +35,6 @@ def main():
     X_test = np.array(X_test)       # shape (10000, 784)
     y_test = np.array(y_test)       # shape (10000,)
 
-    X_test = X_test[:100,:]
-    y_test = y_test[:100]
-
     model = NeuralNetwork()
     model.fit(X_train, y_train)
     print("done training!")
@@ -48,17 +45,6 @@ def main():
 
     print("Test accuracy: ", accuracy)
 
-# def main():
-#     model = NeuralNetwork()
-#     X = np.random.random((10, 784))
-#     y = np.random.random((10,)) * 10
-#     y = np.round(y)
-
-#     print(y)
-
-#     for i in range(10):
-#         model.forward(X[i])
-#         print(model.outputNeuronLayer)
 
 if __name__ == "__main__":
     main()

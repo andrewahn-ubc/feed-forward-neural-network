@@ -4,6 +4,11 @@ import math
 # The neural network class. Contains all the functions related to 
 # a neural network instance, such as backpropagation.
 class NeuralNetwork():
+    def xavier_normal(self, shape, size_in, size_out):
+        limit = np.sqrt(2/(size_in + size_out))
+        out = np.random.randn(*shape) * limit
+        return out
+
     # Sets up the anatomy of the neural network
     def __init__(self):
         # The neurons
@@ -17,20 +22,20 @@ class NeuralNetwork():
         self.outputNeuronLayerPS = np.random.random(10)
 
         # The weights
-        self.firstWeightMatrix = np.random.random((16,784))
-        self.secondWeightMatrix = np.random.random((16,16))
-        self.thirdWeightMatrix = np.random.random((10,16))
+        self.firstWeightMatrix = self.xavier_normal((16,784), 784, 16)
+        self.secondWeightMatrix = self.xavier_normal((16,16), 16, 16)
+        self.thirdWeightMatrix = self.xavier_normal((10,16), 16, 10)
 
         # The biases
-        self.firstBiasVector = np.random.random(16)
-        self.secondBiasVector = np.random.random(16)
-        self.thirdBiasVector = np.random.random(10)
+        self.firstBiasVector = np.zeros(16)
+        self.secondBiasVector = np.zeros(16)
+        self.thirdBiasVector = np.zeros(10)
 
         # neural network specs
         self.numLayers = 3      # not including input layer
         self.alpha = 3        # TODO: update this alpha based on learning rate
-        self.threshold = 1.0    # TODO: update this
-        self.maxIterations = 200    # TODO: update this
+        self.threshold = 0.0000001    # TODO: update this
+        self.maxIterations = 300    # TODO: update this
         self.batchSize = 0.005    # a double representing batch sizes as a percentage of the original dataset size
 
         # stats
@@ -41,15 +46,21 @@ class NeuralNetwork():
     # Output: A vector. 
     # Usage: To be used during forward-propagation.
     def sigmoidVector(self, vector):
-        sigmoid = lambda x: 1/(1 + math.exp(-x))
+        sigmoid = lambda x: 1/(1 + np.exp(-x))
         vectorizedSigmoid = np.vectorize(sigmoid)
         return vectorizedSigmoid(vector)
 
     # Function: The derivate of the sigmoid function for a vector.
     def sigmoidDerivativeVector(self, vector):
-        sigmoidDerivative = lambda x: math.exp(-x)/((1 + math.exp(-x)) ** 2)
+        sigmoidDerivative = lambda x: (1/(1+ np.exp(-x))) * (1 - np.exp(-x))
         vectorized = np.vectorize(sigmoidDerivative)
         return vectorized(vector)
+    
+    def reluVector(self, vector):
+        return np.maximum(0, vector)
+    
+    def reluDerivativeVector(self, vector):
+        return np.where(vector > 0, 1, 0)
 
     # Function: Propagates the input values "forward" through the neural network and changes the 
     #           activations in the hidden layers and the output layer.
@@ -60,19 +71,16 @@ class NeuralNetwork():
     #        Will be called once per image for each gradient descent step.
     def forward(self, image):
         self.firstHiddenNeuronLayer = self.firstWeightMatrix @ image
-        self.firstHiddenNeuronLayer += self.firstBiasVector
-        self.firstHiddenNeuronLayerPS = self.firstHiddenNeuronLayer
-        self.firstHiddenNeuronLayer = self.sigmoidVector(self.firstHiddenNeuronLayer)
+        self.firstHiddenNeuronLayerPS = self.firstHiddenNeuronLayer + self.firstBiasVector
+        self.firstHiddenNeuronLayer = self.reluVector(self.firstHiddenNeuronLayerPS)
 
         self.secondHiddenNeuronLayer = self.secondWeightMatrix @ self.firstHiddenNeuronLayer
-        self.secondHiddenNeuronLayer += self.secondBiasVector
-        self.secondHiddenNeuronLayerPS = self.secondHiddenNeuronLayer
-        self.secondHiddenNeuronLayer = self.sigmoidVector(self.secondHiddenNeuronLayer)
+        self.secondHiddenNeuronLayerPS = self.secondHiddenNeuronLayer + self.secondBiasVector
+        self.secondHiddenNeuronLayer = self.reluVector(self.secondHiddenNeuronLayerPS)
 
         self.outputNeuronLayer = self.thirdWeightMatrix @ self.secondHiddenNeuronLayer
-        self.outputNeuronLayer += self.thirdBiasVector
-        self.outputNeuronLayerPS = self.outputNeuronLayer
-        self.outputNeuronLayer = self.sigmoidVector(self.outputNeuronLayer)
+        self.outputNeuronLayerPS = self.outputNeuronLayer + self.thirdBiasVector
+        self.outputNeuronLayer = self.reluVector(self.outputNeuronLayerPS)
 
     # Function: Return the average value of the cost function (aka objective function) for the current image
     #           cost() = (1/2) Sum{10}_{i = 1} (aL_i - y_i)^2
@@ -100,17 +108,17 @@ class NeuralNetwork():
         cost = self.cost(correct)
 
         # backprop for last layer
-        error_lastLayer = (self.outputNeuronLayer - correct)*self.sigmoidDerivativeVector(self.outputNeuronLayerPS)
+        error_lastLayer = (self.outputNeuronLayer - correct)*self.reluDerivativeVector(self.outputNeuronLayerPS)
         biasesGradient_lastLayer = error_lastLayer
         weightsGradient_lastLayer = (self.secondHiddenNeuronLayer.reshape(-1,1) @ error_lastLayer.reshape(1,-1)).T
 
         # backprop for 2nd hidden layer
-        error_2ndHiddenLayer = (self.thirdWeightMatrix.T @ error_lastLayer)*self.sigmoidDerivativeVector(self.secondHiddenNeuronLayerPS)
+        error_2ndHiddenLayer = (self.thirdWeightMatrix.T @ error_lastLayer)*self.reluDerivativeVector(self.secondHiddenNeuronLayerPS)
         biasesGradient_2ndHiddenLayer = error_2ndHiddenLayer
         weightsGradient_2ndHiddenLayer = (self.firstHiddenNeuronLayer.reshape(-1,1) @ error_2ndHiddenLayer.reshape(1,-1)).T
 
         # backprop for 1st hidden layer 
-        error_1stHiddenLayer = (self.secondWeightMatrix.T @ error_2ndHiddenLayer)*self.sigmoidDerivativeVector(self.firstHiddenNeuronLayerPS)
+        error_1stHiddenLayer = (self.secondWeightMatrix.T @ error_2ndHiddenLayer)*self.reluDerivativeVector(self.firstHiddenNeuronLayerPS)
         biasesGradient_1stHiddenLayer = error_1stHiddenLayer
         weightsGradient_1stHiddenLayer = (image.reshape(-1,1) @ error_1stHiddenLayer.reshape(1,-1)).T
 
@@ -290,8 +298,6 @@ class NeuralNetwork():
             self.forward(X_pred[i])
             # output neuron with the highest activation is the prediction
             prediction = np.argmax(self.outputNeuronLayer)
-            print("output layer: ", self.outputNeuronLayer)
-            print("prediction: ", prediction)
             y_pred = np.append(y_pred, prediction)
 
         y_pred = np.round(y_pred)
