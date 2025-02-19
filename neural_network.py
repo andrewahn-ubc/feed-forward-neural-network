@@ -28,10 +28,13 @@ class NeuralNetwork():
 
         # neural network specs
         self.numLayers = 3      # not including input layer
-        self.alpha = 1.0        # TODO: update this alpha based on learning rate
+        self.alpha = 3        # TODO: update this alpha based on learning rate
         self.threshold = 1.0    # TODO: update this
-        self.maxIterations = 100    # TODO: update this
-        self.batchSize = 0.1    # a double representing batch sizes as a percentage of the original dataset size
+        self.maxIterations = 200    # TODO: update this
+        self.batchSize = 0.005    # a double representing batch sizes as a percentage of the original dataset size
+
+        # stats
+        self.iterationsSoFar = 0
 
     # Function: "Squishes" the domain of a vector from (-inf, inf) to [0,1] using the sigmoid function. 
     # Input: A vector.
@@ -56,17 +59,17 @@ class NeuralNetwork():
     # Usage: To be used before performing backpropagation on a single image. 
     #        Will be called once per image for each gradient descent step.
     def forward(self, image):
-        np.matmul(self.firstWeightMatrix, image, self.firstHiddenNeuronLayer)
+        self.firstHiddenNeuronLayer = self.firstWeightMatrix @ image
         self.firstHiddenNeuronLayer += self.firstBiasVector
         self.firstHiddenNeuronLayerPS = self.firstHiddenNeuronLayer
         self.firstHiddenNeuronLayer = self.sigmoidVector(self.firstHiddenNeuronLayer)
 
-        np.matmul(self.secondWeightMatrix, self.firstHiddenNeuronLayer, self.secondHiddenNeuronLayer)
+        self.secondHiddenNeuronLayer = self.secondWeightMatrix @ self.firstHiddenNeuronLayer
         self.secondHiddenNeuronLayer += self.secondBiasVector
         self.secondHiddenNeuronLayerPS = self.secondHiddenNeuronLayer
         self.secondHiddenNeuronLayer = self.sigmoidVector(self.secondHiddenNeuronLayer)
 
-        np.matmul(self.thirdWeightMatrix, self.secondHiddenNeuronLayer, self.outputNeuronLayer)
+        self.outputNeuronLayer = self.thirdWeightMatrix @ self.secondHiddenNeuronLayer
         self.outputNeuronLayer += self.thirdBiasVector
         self.outputNeuronLayerPS = self.outputNeuronLayer
         self.outputNeuronLayer = self.sigmoidVector(self.outputNeuronLayer)
@@ -151,7 +154,7 @@ class NeuralNetwork():
             # just initialize an array for each of the gradient vectors and find the mean of them individually
             # then return a tuple of the mean vectors and matrices
             firstBiasGradient = np.vstack((firstBiasGradient, gradientTupleForThisImage[0]))
-            firstWeightsGradient = np.insert(firstWeightsGradient, 0, gradientTupleForThisImage[1], axis=0) # TODO: am i ordering these properly?
+            firstWeightsGradient = np.insert(firstWeightsGradient, 0, gradientTupleForThisImage[1], axis=0) 
             secondBiasGradient = np.vstack((secondBiasGradient, gradientTupleForThisImage[2]))
             secondWeightsGradient = np.insert(secondWeightsGradient, 0, gradientTupleForThisImage[3], axis=0)
             thirdBiasGradient = np.vstack((thirdBiasGradient, gradientTupleForThisImage[4]))
@@ -168,7 +171,18 @@ class NeuralNetwork():
         # compute average cost 
         averageCost = np.mean(costs)
 
-        print("backprop on batch complete, cost: ", averageCost)
+        # update progression
+        self.iterationsSoFar += 1
+
+        print(f"backprop on batch {self.iterationsSoFar} complete, cost: ", averageCost)
+
+        # scale learning rate based on the value of the cost function 
+        # if (averageCost > 3.5):
+        #     self.alpha = 1.5
+        # elif (averageCost > 2.5):
+        #     self.alpha = 0.35 * averageCost
+        # else:
+        #     self.alpha = 0.3 * averageCost
 
         return (avgFirstBiasGrad,
                 avgFirstWeightsGrad,
@@ -240,15 +254,15 @@ class NeuralNetwork():
         if (len(X) != len(y)):
             print("Error: the original size of X and y are different. X is length ", len(X), " and y is length ", len(y), ".")
 
+        batchSize = math.floor(len(X) * self.batchSize)
+        index = 0
+
         # Initialize the batches with the correct shape 
-        X_batches = np.empty((0,10,784))
-        y_batches = np.empty((0,10))
+        X_batches = np.empty((0,batchSize,784))
+        y_batches = np.empty((0,batchSize))
         # NOTE: if you want to initialize an empty array but still want to encode the correct shape, 
         #       you should use np.empty() with 0 in the correct spot. 
         #       np.array will assume that your shape dimensions are array elements.
-
-        batchSize = math.floor(len(X) * self.batchSize)
-        index = 0
 
         while (index + batchSize <= len(X) - 1):
             start = index
@@ -275,7 +289,9 @@ class NeuralNetwork():
         for i in range(len(X_pred)):
             self.forward(X_pred[i])
             # output neuron with the highest activation is the prediction
-            prediction = np.max(self.outputNeuronLayer)
+            prediction = np.argmax(self.outputNeuronLayer)
+            print("output layer: ", self.outputNeuronLayer)
+            print("prediction: ", prediction)
             y_pred = np.append(y_pred, prediction)
 
         y_pred = np.round(y_pred)

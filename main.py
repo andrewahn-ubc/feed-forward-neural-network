@@ -27,14 +27,16 @@ def load_data():
     return x_train, y_train, x_test, y_test
 
 def main():
-    # TODO: load MNIST dataset and split into training and testing datasets.
+    # load MNIST dataset and split into training and testing datasets.
     X_train, y_train, X_test, y_test = load_data()
-    # TODO: test the neural network using the testing dataset.
 
-    X_train = np.array(X_train)     # shape (60000, 28, 28)
+    X_train = np.array(X_train)     # shape (60000, 784)
     y_train = np.array(y_train)     # shape (60000,)
-    X_test = np.array(X_test)       # shape (10000, 28, 28)
+    X_test = np.array(X_test)       # shape (10000, 784)
     y_test = np.array(y_test)       # shape (10000,)
+
+    X_test = X_test[:100,:]
+    y_test = y_test[:100]
 
     model = NeuralNetwork()
     model.fit(X_train, y_train)
@@ -42,10 +44,21 @@ def main():
 
     y_pred = model.predict(X_test)
     print(y_pred)
+    accuracy = 1 - np.mean(y_pred != y_test)
 
-    # TODO: return the accuracy
+    print("Test accuracy: ", accuracy)
 
+# def main():
+#     model = NeuralNetwork()
+#     X = np.random.random((10, 784))
+#     y = np.random.random((10,)) * 10
+#     y = np.round(y)
+
+#     print(y)
+
+#     for i in range(10):
+#         model.forward(X[i])
+#         print(model.outputNeuronLayer)
 
 if __name__ == "__main__":
     main()
-
