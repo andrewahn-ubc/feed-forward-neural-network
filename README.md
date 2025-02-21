@@ -33,7 +33,7 @@ At the moment, hyperparameters such as the number of layers, the number of neuro
     - Stochastic Gradient Descent (mini-batch)
 - Initializers
     - Random Uniform
-    - Glorot Normal
+    - Xavier Normal
     - He Normal
 - Activation Functions
     - ReLU
