@@ -1,6 +1,6 @@
 > "What I cannot create, I do not understand" -Richard Feynman
 
-
+<br>
 # Feed-Forward Neural Network
 
 A feed-forward neural network built from scratch (ie. using only numpy, no tensorflow or pytorch) as an exercise to learn machine learning.
@@ -26,8 +26,7 @@ At the moment, hyperparameters such as the number of layers, the number of neuro
     - Epochs: 7
     - Learning rate scheduling: Reduce on Plateau
 
-Here are the features I've implemented:
-
+ ## Features
 - Layers
     - Dense
     - Dropout
@@ -37,8 +36,6 @@ Here are the features I've implemented:
     - Random Uniform
     - Glorot Normal
     - He Normal
-    - Zeros
-    - Ones
 - Activation Functions
     - ReLU
     - Sigmoid
@@ -54,7 +51,7 @@ Here are the features I've implemented:
     - gradient clipping
     - early stopping with best model checkpointing
 
-## Some goals
+## Goals
 
 - Once the implementation is done, test it on the MNIST hand-written digits dataset and get a relatively high accuracy (anything >80%)
     - Update: DONE, achieved 85.65% test accuracy
