@@ -53,7 +53,8 @@ At the moment, hyperparameters such as the number of layers, the number of neuro
 ## Goals
 
 - Once the implementation is done, test it on the MNIST hand-written digits dataset and get a relatively high accuracy (anything >80%)
-    - Update: DONE, achieved 85.65% test accuracy
-    - ![ffnnperf](https://github.com/user-attachments/assets/be789a3d-cc0c-464f-a72f-685209ee1da5)
+    - Update: DONE, achieved 86.39% test accuracy
+    - <img width="744" alt="Screenshot 2025-02-21 at 11 52 52 AM" src="https://github.com/user-attachments/assets/36ee0271-2f48-4ee4-8e3d-119b50593a55" />
+
 - Explore some fun deep learning techniques (learning rate schedules, early stopping, different gradient descent variations, hyperparameter tuning, different initialization methods, etc.).
     - Update: DONE, tried various LR schedules, early stopping methods, initialization methods, activation functions, and model architectures. Did not implement any other optimizers though (like Adam)
