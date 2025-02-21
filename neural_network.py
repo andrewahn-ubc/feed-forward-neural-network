@@ -4,11 +4,6 @@ import math
 # The neural network class. Contains all the functions related to 
 # a neural network instance, such as backpropagation.
 class NeuralNetwork():
-    def he_normal(self, shape, size_in, size_out):
-        limit = np.sqrt(2/(size_in))
-        out = np.random.randn(*shape) * limit
-        return out
-
     # Sets up the anatomy of the neural network
     def __init__(self):
         # The neurons
@@ -16,21 +11,21 @@ class NeuralNetwork():
         self.secondHiddenNeuronLayer = np.random.random(128)
         self.thirdHiddenNeuronLayer = np.random.random(64)
         self.fourthHiddenNeuronLayer = np.random.random(32)
-        self.outputNeuronLayer = np.random.random(10)
+        self.fifthNeuronLayer = np.random.random(10)
 
         # The neurons pre-squish (this gives us access to z = a1w1 + a2w2 + ... + b)
         self.firstHiddenNeuronLayerPS = np.random.random(256)
         self.secondHiddenNeuronLayerPS = np.random.random(128)
         self.thirdHiddenNeuronLayerPS = np.random.random(64)
         self.fourthHiddenNeuronLayerPS = np.random.random(32)
-        self.outputNeuronLayerPS = np.random.random(10)
+        self.fifthNeuronLayerPS = np.random.random(10)
 
         # The weights
-        self.firstWeightMatrix = self.he_normal((256,784), 784, 256)
-        self.secondWeightMatrix = self.he_normal((128,256), 256, 128)
-        self.thirdWeightMatrix = self.he_normal((64,128), 128, 64)
-        self.fourthWeightMatrix = self.he_normal((32,64), 64, 32)
-        self.fifthWeightMatrix = self.he_normal((10,32), 32, 10)
+        self.firstWeightMatrix = self.he_normal((256,784))
+        self.secondWeightMatrix = self.he_normal((128,256))
+        self.thirdWeightMatrix = self.he_normal((64,128))
+        self.fourthWeightMatrix = self.he_normal((32,64))
+        self.fifthWeightMatrix = self.he_normal((10,32))
 
         # The biases
         self.firstBiasVector = np.zeros(256)
@@ -41,10 +36,10 @@ class NeuralNetwork():
 
         # neural network specs
         self.numLayers = 5      # not including input layer
-        self.alpha = 0.5      # TODO: update this alpha based on learning rate
+        self.alpha = 0.3      # TODO: update this alpha based on learning rate
         self.threshold = 0.05    # TODO: update this
-        self.maxIterations = 600    # TODO: update this
-        self.batchSize = 0.01    # a double representing batch sizes as a percentage of the original dataset size
+        self.maxIterations = 100    # TODO: update this
+        self.batchSize = 0.002    # a double representing batch sizes as a percentage of the original dataset size
         
         # hyperparameters for plateau LR scheduling
         self.bestLoss = np.inf
@@ -67,6 +62,11 @@ class NeuralNetwork():
 
         # stats
         self.iterationsSoFar = 0
+    
+    def he_normal(self, shape):
+        limit = np.sqrt(2/shape[1])
+        out = np.random.randn(*shape) * limit
+        return out
 
     def sigmoidVector(self, vector):
         sigmoid = lambda x: 1/(1 + np.exp(-x))
@@ -92,7 +92,7 @@ class NeuralNetwork():
         return - np.sum(correct * np.log(predicted)) / len(correct)
     
     def squaredErrorCost(self, correct):
-        return np.sum((self.outputNeuronLayer - correct) ** 2)/2
+        return np.sum((self.fifthNeuronLayer - correct) ** 2)/2
     
     def gradientClipping(self, vector, max_norm=2.0):
         total_norm = np.sqrt(np.sum(vector ** 2))
@@ -115,9 +115,17 @@ class NeuralNetwork():
         self.secondHiddenNeuronLayerPS = self.secondHiddenNeuronLayer + self.secondBiasVector
         self.secondHiddenNeuronLayer = self.reluVector(self.secondHiddenNeuronLayerPS)
 
-        self.outputNeuronLayer = self.thirdWeightMatrix @ self.secondHiddenNeuronLayer
-        self.outputNeuronLayerPS = self.outputNeuronLayer + self.thirdBiasVector
-        self.outputNeuronLayer = self.softmax(self.outputNeuronLayerPS)
+        self.thirdHiddenNeuronLayer = self.thirdWeightMatrix @ self.secondHiddenNeuronLayer
+        self.thirdHiddenNeuronLayerPS = self.thirdHiddenNeuronLayer + self.thirdBiasVector
+        self.thirdHiddenNeuronLayer = self.reluVector(self.thirdHiddenNeuronLayerPS)
+
+        self.fourthHiddenNeuronLayer = self.fourthWeightMatrix @ self.thirdHiddenNeuronLayer
+        self.fourthHiddenNeuronLayerPS = self.fourthHiddenNeuronLayer + self.fourthBiasVector
+        self.fourthHiddenNeuronLayer = self.reluVector(self.fourthHiddenNeuronLayerPS)
+
+        self.fifthNeuronLayer = self.fifthWeightMatrix @ self.fourthHiddenNeuronLayer
+        self.fifthNeuronLayerPS = self.fifthNeuronLayer + self.fifthBiasVector
+        self.fifthNeuronLayer = self.softmax(self.fifthNeuronLayerPS)
 
     # Function: The "heart" of the backpropagation algorithm, performed on a single training example
     # Input: A single image - an array of size 784 containing doubles, and
@@ -134,16 +142,28 @@ class NeuralNetwork():
         correct[target] = 1
 
         # computer cost for this image
-        cost = self.crossEntropyCost(correct, self.outputNeuronLayer)
+        cost = self.crossEntropyCost(correct, self.fifthNeuronLayer)
 
-        # backprop for last layer
-        error_lastLayer = (self.outputNeuronLayer - correct) / len(correct)
-        biasesGradient_lastLayer = error_lastLayer
-        weightsGradient_lastLayer = (self.secondHiddenNeuronLayer.reshape(-1,1) @ error_lastLayer.reshape(1,-1)).T
-        weightsGradient_lastLayer = self.gradientClipping(weightsGradient_lastLayer)
+        # backprop for 5th layer
+        error_5thLayer = (self.fifthNeuronLayer - correct) / len(correct)
+        biasesGradient_5thLayer = error_5thLayer
+        weightsGradient_5thLayer = (self.fourthHiddenNeuronLayer.reshape(-1,1) @ error_5thLayer.reshape(1,-1)).T
+        weightsGradient_5thLayer = self.gradientClipping(weightsGradient_5thLayer)
 
         # backprop for 2nd hidden layer
-        error_2ndHiddenLayer = (self.thirdWeightMatrix.T @ error_lastLayer)*self.reluDerivativeVector(self.secondHiddenNeuronLayerPS)
+        error_4thHiddenLayer = (self.fifthWeightMatrix.T @ error_5thLayer)*self.reluDerivativeVector(self.fourthHiddenNeuronLayerPS)
+        biasesGradient_4thHiddenLayer = error_4thHiddenLayer
+        weightsGradient_4thHiddenLayer = (self.thirdHiddenNeuronLayer.reshape(-1,1) @ error_4thHiddenLayer.reshape(1,-1)).T
+        weightsGradient_4thHiddenLayer = self.gradientClipping(weightsGradient_4thHiddenLayer)
+
+        # backprop for 2nd hidden layer
+        error_3rdHiddenLayer = (self.fourthWeightMatrix.T @ error_4thHiddenLayer)*self.reluDerivativeVector(self.thirdHiddenNeuronLayerPS)
+        biasesGradient_3rdHiddenLayer = error_3rdHiddenLayer
+        weightsGradient_3rdHiddenLayer = (self.secondHiddenNeuronLayer.reshape(-1,1) @ error_3rdHiddenLayer.reshape(1,-1)).T
+        weightsGradient_3rdHiddenLayer = self.gradientClipping(weightsGradient_3rdHiddenLayer)
+
+        # backprop for 2nd hidden layer
+        error_2ndHiddenLayer = (self.thirdWeightMatrix.T @ error_3rdHiddenLayer)*self.reluDerivativeVector(self.secondHiddenNeuronLayerPS)
         biasesGradient_2ndHiddenLayer = error_2ndHiddenLayer
         weightsGradient_2ndHiddenLayer = (self.firstHiddenNeuronLayer.reshape(-1,1) @ error_2ndHiddenLayer.reshape(1,-1)).T
         weightsGradient_2ndHiddenLayer = self.gradientClipping(weightsGradient_2ndHiddenLayer)
@@ -158,8 +178,12 @@ class NeuralNetwork():
                 weightsGradient_1stHiddenLayer, 
                 biasesGradient_2ndHiddenLayer, 
                 weightsGradient_2ndHiddenLayer, 
-                biasesGradient_lastLayer,
-                weightsGradient_lastLayer), cost
+                biasesGradient_3rdHiddenLayer,
+                weightsGradient_3rdHiddenLayer,
+                biasesGradient_4thHiddenLayer,
+                weightsGradient_4thHiddenLayer,
+                biasesGradient_5thLayer,
+                weightsGradient_5thLayer), cost
 
 
     # Function: Facilitates backpropagation by calling the backpropOneImage function on 
@@ -176,12 +200,17 @@ class NeuralNetwork():
         # there will be n columns, where n is the number of images
         costs = np.array([])
 
-        firstBiasGradient = np.empty((0,16))
-        secondBiasGradient = np.empty((0,16))
-        thirdBiasGradient = np.empty((0,10))
-        firstWeightsGradient = np.empty((0,16,784))
-        secondWeightsGradient = np.empty((0,16,16))
-        thirdWeightsGradient = np.empty((0,10,16))
+        firstBiasGradient = np.empty((0,256))
+        secondBiasGradient = np.empty((0,128))
+        thirdBiasGradient = np.empty((0,64))
+        fourthBiasGradient = np.empty((0,32))
+        fifthBiasGradient = np.empty((0,10))
+
+        firstWeightsGradient = np.empty((0,256,784))
+        secondWeightsGradient = np.empty((0,128,256))
+        thirdWeightsGradient = np.empty((0,64,128))
+        fourthWeightsGradient = np.empty((0,32,64))
+        fifthWeightsGradient = np.empty((0,10,32))
 
         if (len(X) != len(y)):
             print("Error: length of X and y are different. X is of length ", len(X), " and y is of length ", len(y), ".")
@@ -199,6 +228,10 @@ class NeuralNetwork():
             secondWeightsGradient = np.insert(secondWeightsGradient, 0, gradientTupleForThisImage[3], axis=0)
             thirdBiasGradient = np.vstack((thirdBiasGradient, gradientTupleForThisImage[4]))
             thirdWeightsGradient = np.insert(thirdWeightsGradient, 0, gradientTupleForThisImage[5], axis=0)
+            fourthBiasGradient = np.vstack((fourthBiasGradient, gradientTupleForThisImage[6]))
+            fourthWeightsGradient = np.insert(fourthWeightsGradient, 0, gradientTupleForThisImage[7], axis=0)
+            fifthBiasGradient = np.vstack((fifthBiasGradient, gradientTupleForThisImage[8]))
+            fifthWeightsGradient = np.insert(fifthWeightsGradient, 0, gradientTupleForThisImage[9], axis=0)
             
         # array containing the average gradient matrices and vectors
         avgFirstBiasGrad = np.mean(firstBiasGradient, axis=0)
@@ -207,6 +240,10 @@ class NeuralNetwork():
         avgSecondWeightsGrad = np.mean(secondWeightsGradient, axis=0)
         avgThirdBiasGrad = np.mean(thirdBiasGradient, axis=0)
         avgThirdWeightsGrad = np.mean(thirdWeightsGradient, axis=0)
+        avgFourthBiasGrad = np.mean(fourthBiasGradient, axis=0)
+        avgFourthWeightsGrad = np.mean(fourthWeightsGradient, axis=0)
+        avgFifthBiasGrad = np.mean(fifthBiasGradient, axis=0)
+        avgFifthWeightsGrad = np.mean(fifthWeightsGradient, axis=0)
 
         # compute average cost 
         averageCost = np.mean(costs)
@@ -220,7 +257,11 @@ class NeuralNetwork():
                           self.secondBiasVector,
                           self.secondWeightMatrix,
                           self.thirdBiasVector,
-                          self.thirdWeightMatrix)
+                          self.thirdWeightMatrix,
+                          self.fourthBiasVector,
+                          self.fourthWeightMatrix,
+                          self.fifthBiasVector,
+                          self.fifthWeightMatrix)
         else:
             self.wait += 1
         
@@ -247,7 +288,11 @@ class NeuralNetwork():
                 avgSecondBiasGrad,
                 avgSecondWeightsGrad,
                 avgThirdBiasGrad,
-                avgThirdWeightsGrad), averageCost
+                avgThirdWeightsGrad,
+                avgFourthBiasGrad,
+                avgFourthWeightsGrad,
+                avgFifthBiasGrad,
+                avgFifthWeightsGrad), averageCost
         
     # Function: Helper function to apply the gradient descent step to the neural network by 
     #           adding the matrices and vectors in the tuple to the neural network 
@@ -262,11 +307,15 @@ class NeuralNetwork():
         self.firstWeightMatrix -= gradientVectors[1] * self.alpha
         self.secondWeightMatrix -= gradientVectors[3] * self.alpha
         self.thirdWeightMatrix -= gradientVectors[5] * self.alpha
+        self.fourthWeightMatrix -= gradientVectors[7] * self.alpha
+        self.fifthWeightMatrix -= gradientVectors[9] * self.alpha
 
         # The biases
         self.firstBiasVector -= gradientVectors[0] * self.alpha
         self.secondBiasVector -= gradientVectors[2] * self.alpha
         self.thirdBiasVector -= gradientVectors[4] * self.alpha
+        self.fourthBiasVector -= gradientVectors[6] * self.alpha
+        self.fifthBiasVector -= gradientVectors[8] * self.alpha
 
     # Function: Perform stochastic gradient descent (SGD) by running backpropagation on training data 
     #           batches repeatedly until the resulting gradient vector is sufficiently small.
@@ -299,6 +348,10 @@ class NeuralNetwork():
                 self.secondWeightMatrix = self.bestModel[3]
                 self.thirdBiasVector = self.bestModel[4]
                 self.thirdWeightMatrix = self.bestModel[5]
+                self.fourthBiasVector = self.bestModel[6]
+                self.fourthWeightMatrix = self.bestModel[7]
+                self.fifthBiasVector = self.bestModel[8]
+                self.fifthWeightMatrix = self.bestModel[9]
                 print("The model chosen has the following cost: ", self.bestLoss)
                 break
 
@@ -317,29 +370,18 @@ class NeuralNetwork():
     #        time someone wants to train the NN. Manages training data batching.
     def fit(self, X, y):
         # batch training data for SGD
+        print("fit() been called yo")
         if (len(X) != len(y)):
             print("Error: the original size of X and y are different. X is length ", len(X), " and y is length ", len(y), ".")
 
         batchSize = math.floor(len(X) * self.batchSize)
-        index = 0
+        numBatches = len(X) // batchSize
 
         # Initialize the batches with the correct shape 
-        X_batches = np.empty((0,batchSize,784))
-        y_batches = np.empty((0,batchSize))
-        # NOTE: if you want to initialize an empty array but still want to encode the correct shape, 
-        #       you should use np.empty() with 0 in the correct spot. 
-        #       np.array will assume that your shape dimensions are array elements.
+        X_batches = X[:numBatches * batchSize].reshape(numBatches, batchSize, -1)
+        y_batches = y[:numBatches * batchSize].reshape(numBatches, batchSize)
 
-        while (index + batchSize <= len(X) - 1):
-            start = index
-            end = index + batchSize
-
-            X_batch = np.array(X[start:end, :])
-            y_batch = np.array(y[start:end])
-            X_batches = np.insert(X_batches, 0, X_batch, axis=0) # it doesn't matter where we insert here
-            y_batches = np.insert(y_batches, 0, y_batch, axis=0)
-
-            index += batchSize
+        print("batching complete, SGD starting")
 
         # Let's get it started!!!!
         self.gradientDescent(X_batches, y_batches)
@@ -355,7 +397,7 @@ class NeuralNetwork():
         for i in range(len(X_pred)):
             self.forward(X_pred[i])
             # output neuron with the highest activation is the prediction
-            prediction = np.argmax(self.outputNeuronLayer)
+            prediction = np.argmax(self.fifthNeuronLayer)
             y_pred = np.append(y_pred, prediction)
 
         y_pred = np.round(y_pred)
