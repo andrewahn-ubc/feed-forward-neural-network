@@ -4,53 +4,75 @@ import math
 # The neural network class. Contains all the functions related to 
 # a neural network instance, such as backpropagation.
 class NeuralNetwork():
-    def xavier_normal(self, shape, size_in, size_out):
-        limit = np.sqrt(2/(size_in + size_out))
+    def he_normal(self, shape, size_in, size_out):
+        limit = np.sqrt(2/(size_in))
         out = np.random.randn(*shape) * limit
         return out
 
     # Sets up the anatomy of the neural network
     def __init__(self):
         # The neurons
-        self.firstHiddenNeuronLayer = np.random.random(16)
-        self.secondHiddenNeuronLayer = np.random.random(16)
+        self.firstHiddenNeuronLayer = np.random.random(256)
+        self.secondHiddenNeuronLayer = np.random.random(128)
+        self.thirdHiddenNeuronLayer = np.random.random(64)
+        self.fourthHiddenNeuronLayer = np.random.random(32)
         self.outputNeuronLayer = np.random.random(10)
 
         # The neurons pre-squish (this gives us access to z = a1w1 + a2w2 + ... + b)
-        self.firstHiddenNeuronLayerPS = np.random.random(16)
-        self.secondHiddenNeuronLayerPS = np.random.random(16)
+        self.firstHiddenNeuronLayerPS = np.random.random(256)
+        self.secondHiddenNeuronLayerPS = np.random.random(128)
+        self.thirdHiddenNeuronLayerPS = np.random.random(64)
+        self.fourthHiddenNeuronLayerPS = np.random.random(32)
         self.outputNeuronLayerPS = np.random.random(10)
 
         # The weights
-        self.firstWeightMatrix = self.xavier_normal((16,784), 784, 16)
-        self.secondWeightMatrix = self.xavier_normal((16,16), 16, 16)
-        self.thirdWeightMatrix = self.xavier_normal((10,16), 16, 10)
+        self.firstWeightMatrix = self.he_normal((256,784), 784, 256)
+        self.secondWeightMatrix = self.he_normal((128,256), 256, 128)
+        self.thirdWeightMatrix = self.he_normal((64,128), 128, 64)
+        self.fourthWeightMatrix = self.he_normal((32,64), 64, 32)
+        self.fifthWeightMatrix = self.he_normal((10,32), 32, 10)
 
         # The biases
-        self.firstBiasVector = np.zeros(16)
-        self.secondBiasVector = np.zeros(16)
-        self.thirdBiasVector = np.zeros(10)
+        self.firstBiasVector = np.zeros(256)
+        self.secondBiasVector = np.zeros(128)
+        self.thirdBiasVector = np.zeros(64)
+        self.fourthBiasVector = np.zeros(32)
+        self.fifthBiasVector = np.zeros(10)
 
         # neural network specs
-        self.numLayers = 3      # not including input layer
-        self.alpha = 3        # TODO: update this alpha based on learning rate
-        self.threshold = 0.0000001    # TODO: update this
-        self.maxIterations = 300    # TODO: update this
-        self.batchSize = 0.005    # a double representing batch sizes as a percentage of the original dataset size
+        self.numLayers = 5      # not including input layer
+        self.alpha = 0.5      # TODO: update this alpha based on learning rate
+        self.threshold = 0.05    # TODO: update this
+        self.maxIterations = 600    # TODO: update this
+        self.batchSize = 0.01    # a double representing batch sizes as a percentage of the original dataset size
+        
+        # hyperparameters for plateau LR scheduling
+        self.bestLoss = np.inf
+        self.wait = 0
+        self.patience = 15
+        self.factor = 0.9
+        self.minAlpha = 0.01
+
+        # best parameters so far, for Early Stopping with Best Model Checkpointing
+        self.bestModel = (self.firstBiasVector,
+                          self.firstWeightMatrix,
+                          self.secondBiasVector,
+                          self.secondWeightMatrix,
+                          self.thirdBiasVector,
+                          self.thirdWeightMatrix,
+                          self.fourthBiasVector,
+                          self.fourthWeightMatrix,
+                          self.fifthBiasVector,
+                          self.fifthWeightMatrix)
 
         # stats
         self.iterationsSoFar = 0
 
-    # Function: "Squishes" the domain of a vector from (-inf, inf) to [0,1] using the sigmoid function. 
-    # Input: A vector.
-    # Output: A vector. 
-    # Usage: To be used during forward-propagation.
     def sigmoidVector(self, vector):
         sigmoid = lambda x: 1/(1 + np.exp(-x))
         vectorizedSigmoid = np.vectorize(sigmoid)
         return vectorizedSigmoid(vector)
 
-    # Function: The derivate of the sigmoid function for a vector.
     def sigmoidDerivativeVector(self, vector):
         sigmoidDerivative = lambda x: (1/(1+ np.exp(-x))) * (1 - np.exp(-x))
         vectorized = np.vectorize(sigmoidDerivative)
@@ -61,6 +83,21 @@ class NeuralNetwork():
     
     def reluDerivativeVector(self, vector):
         return np.where(vector > 0, 1, 0)
+    
+    def softmax(self, vector):
+        exp = np.exp((vector) - np.max(vector))
+        return exp / np.sum(exp)
+    
+    def crossEntropyCost(self, correct, predicted):
+        return - np.sum(correct * np.log(predicted)) / len(correct)
+    
+    def squaredErrorCost(self, correct):
+        return np.sum((self.outputNeuronLayer - correct) ** 2)/2
+    
+    def gradientClipping(self, vector, max_norm=2.0):
+        total_norm = np.sqrt(np.sum(vector ** 2))
+        factor = max_norm / max(total_norm, max_norm)
+        return vector * factor
 
     # Function: Propagates the input values "forward" through the neural network and changes the 
     #           activations in the hidden layers and the output layer.
@@ -80,15 +117,7 @@ class NeuralNetwork():
 
         self.outputNeuronLayer = self.thirdWeightMatrix @ self.secondHiddenNeuronLayer
         self.outputNeuronLayerPS = self.outputNeuronLayer + self.thirdBiasVector
-        self.outputNeuronLayer = self.reluVector(self.outputNeuronLayerPS)
-
-    # Function: Return the average value of the cost function (aka objective function) for the current image
-    #           cost() = (1/2) Sum{10}_{i = 1} (aL_i - y_i)^2
-    # Input: A 1D array containing the correct output for the neural network for the current image
-    # Output: A double
-    # Usage: To be used during backpropOneImage. Will eventually be used for the stopping condition in gradient descent.
-    def cost(self, correct):
-        return np.sum((self.outputNeuronLayer - correct) ** 2)/2
+        self.outputNeuronLayer = self.softmax(self.outputNeuronLayerPS)
 
     # Function: The "heart" of the backpropagation algorithm, performed on a single training example
     # Input: A single image - an array of size 784 containing doubles, and
@@ -105,22 +134,25 @@ class NeuralNetwork():
         correct[target] = 1
 
         # computer cost for this image
-        cost = self.cost(correct)
+        cost = self.crossEntropyCost(correct, self.outputNeuronLayer)
 
         # backprop for last layer
-        error_lastLayer = (self.outputNeuronLayer - correct)*self.reluDerivativeVector(self.outputNeuronLayerPS)
+        error_lastLayer = (self.outputNeuronLayer - correct) / len(correct)
         biasesGradient_lastLayer = error_lastLayer
         weightsGradient_lastLayer = (self.secondHiddenNeuronLayer.reshape(-1,1) @ error_lastLayer.reshape(1,-1)).T
+        weightsGradient_lastLayer = self.gradientClipping(weightsGradient_lastLayer)
 
         # backprop for 2nd hidden layer
         error_2ndHiddenLayer = (self.thirdWeightMatrix.T @ error_lastLayer)*self.reluDerivativeVector(self.secondHiddenNeuronLayerPS)
         biasesGradient_2ndHiddenLayer = error_2ndHiddenLayer
         weightsGradient_2ndHiddenLayer = (self.firstHiddenNeuronLayer.reshape(-1,1) @ error_2ndHiddenLayer.reshape(1,-1)).T
+        weightsGradient_2ndHiddenLayer = self.gradientClipping(weightsGradient_2ndHiddenLayer)
 
         # backprop for 1st hidden layer 
         error_1stHiddenLayer = (self.secondWeightMatrix.T @ error_2ndHiddenLayer)*self.reluDerivativeVector(self.firstHiddenNeuronLayerPS)
         biasesGradient_1stHiddenLayer = error_1stHiddenLayer
         weightsGradient_1stHiddenLayer = (image.reshape(-1,1) @ error_1stHiddenLayer.reshape(1,-1)).T
+        weightsGradient_1stHiddenLayer = self.gradientClipping(weightsGradient_1stHiddenLayer)
 
         return (biasesGradient_1stHiddenLayer, 
                 weightsGradient_1stHiddenLayer, 
@@ -179,10 +211,28 @@ class NeuralNetwork():
         # compute average cost 
         averageCost = np.mean(costs)
 
+        # Plateau learning rate scheduling
+        if (self.bestLoss > averageCost):
+            self.bestLoss = averageCost
+            self.wait = 0
+            self.bestModel = (self.firstBiasVector,
+                          self.firstWeightMatrix,
+                          self.secondBiasVector,
+                          self.secondWeightMatrix,
+                          self.thirdBiasVector,
+                          self.thirdWeightMatrix)
+        else:
+            self.wait += 1
+        
+        if (self.wait >= self.patience):
+            self.alpha = max(self.minAlpha, self.alpha * self.factor)
+            self.wait = 0
+            print("updated the learning rate just now, ts pmo... new value: ", self.alpha)
+
         # update progression
         self.iterationsSoFar += 1
 
-        print(f"backprop on batch {self.iterationsSoFar} complete, cost: ", averageCost)
+        print(f"backprop on batch {self.iterationsSoFar} complete, cost: ", averageCost, "    best cost so far: ", self.bestLoss)
 
         # scale learning rate based on the value of the cost function 
         # if (averageCost > 3.5):
@@ -242,6 +292,14 @@ class NeuralNetwork():
 
             # check break conditions (either cost is low enough or we've reached the max number of iterations)
             if (self.threshold >= cost or numIterations >= self.maxIterations):
+                # print(self.bestModel)
+                self.firstBiasVector = self.bestModel[0]
+                self.firstWeightMatrix = self.bestModel[1]
+                self.secondBiasVector = self.bestModel[2]
+                self.secondWeightMatrix = self.bestModel[3]
+                self.thirdBiasVector = self.bestModel[4]
+                self.thirdWeightMatrix = self.bestModel[5]
+                print("The model chosen has the following cost: ", self.bestLoss)
                 break
 
             # update counter (mod by number of batches) and number of iterations 
