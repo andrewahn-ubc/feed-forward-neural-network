@@ -10,7 +10,7 @@ There are a lot of tutorials on how to build an NN from scratch, but I challenge
 
 ## Implementation Details
 
-At the moment, hyperparameters such as the number of layers, the number of neurons in each layer, and activation functions are hardcoded. I might parameterize it later, but my main goal for this project was to learn deep learning, so I'm content with where I am right now. I tested the model on the MNIST hand-written digits dataset and was able to achieve 86.39% test accuracy using the following model architecture:
+At the moment, hyperparameters such as the number of layers, the number of neurons in each layer, and activation functions are hardcoded. I might parameterize it later, but my main goal for this project was to learn deep learning, so I'm content with where I am right now. I tested the model on the classic Optical Character Recognition problem using the MNIST hand-written digits dataset and was able to achieve 86.39% test accuracy using the following model architecture:
 
 - Input layer: 784 neurons
 - 1st hidden layer: 256 neurons, ReLu
