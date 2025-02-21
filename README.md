@@ -1,12 +1,13 @@
-# Feed-Forward Neural Network
-
 > "What I cannot create, I do not understand" -Richard Feynman
+
+
+# Feed-Forward Neural Network
 
 A feed-forward neural network built from scratch (ie. using only numpy, no tensorflow or pytorch) as an exercise to learn machine learning.
 
 ## Background
 
-There are a lot of tutorials on how to build an NN from scratch but I wanted to challenge myself and derive my own implementation. I watched [3B1B's series on neural networks](https://youtu.be/aircAruvnKk?si=3YaX6TYLx1CXsgmj) and referenced [Michael Nielson's online textbook](http://neuralnetworksanddeeplearning.com/) to get a theoretical understanding of NNs.
+There are a lot of tutorials on how to build an NN from scratch, but I wanted to challenge myself to derive my own implementation. I watched [3B1B's series on neural networks](https://youtu.be/aircAruvnKk?si=3YaX6TYLx1CXsgmj) and referenced [Michael Nielson's online textbook](http://neuralnetworksanddeeplearning.com/) to get a theoretical understanding of NNs.
 
 ## Implementation Details
 
