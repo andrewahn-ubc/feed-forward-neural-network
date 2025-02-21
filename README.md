@@ -1,6 +1,5 @@
 > "What I cannot create, I do not understand" -Richard Feynman
 
-<br>
 # Feed-Forward Neural Network
 
 A feed-forward neural network built from scratch (ie. using only numpy, no tensorflow or pytorch) as an exercise to learn machine learning.
