@@ -28,7 +28,6 @@ At the moment, hyperparameters such as the number of layers, the number of neuro
  ## Features
 - Layers
     - Dense
-    - Dropout
 - Optimizers
     - Stochastic Gradient Descent (mini-batch)
 - Initializers
@@ -58,3 +57,8 @@ At the moment, hyperparameters such as the number of layers, the number of neuro
 
 - Explore some fun deep learning techniques (learning rate schedules, early stopping, different gradient descent variations, hyperparameter tuning, different initialization methods, etc.).
     - Update: DONE, tried various LR schedules, early stopping methods, initialization methods, activation functions, and model architectures. Did not implement any other optimizers though (like Adam)
+ 
+## Next Steps
+- Refactor model architecture to have flexible number of layers and neurons, and for the user to be able to select features using the CLI
+- Implement Adam optimizer, SGD with momentum, and Dropout regularization
+- (reach) build a web app to demo the model
