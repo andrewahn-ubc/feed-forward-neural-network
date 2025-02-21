@@ -22,7 +22,7 @@ At the moment, hyperparameters such as the number of layers, the number of neuro
 - Optimizer: Stochastic Gradient Descent
 - Other hyper-parameters:
     - Batch sizes: 0.3% of training set
-    - Epochs: 7
+    - Epochs: 8
     - Learning rate scheduling: Reduce on Plateau
 
  ## Features
@@ -54,5 +54,6 @@ At the moment, hyperparameters such as the number of layers, the number of neuro
 
 - Once the implementation is done, test it on the MNIST hand-written digits dataset and get a relatively high accuracy (anything >80%)
     - Update: DONE, achieved 85.65% test accuracy
+    - ![ffnnperf](https://github.com/user-attachments/assets/be789a3d-cc0c-464f-a72f-685209ee1da5)
 - Explore some fun deep learning techniques (learning rate schedules, early stopping, different gradient descent variations, hyperparameter tuning, different initialization methods, etc.).
     - Update: DONE, tried various LR schedules, early stopping methods, initialization methods, activation functions, and model architectures. Did not implement any other optimizers though (like Adam)
