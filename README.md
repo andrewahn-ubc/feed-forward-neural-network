@@ -10,7 +10,7 @@ There are a lot of tutorials on how to build an NN from scratch, but I challenge
 
 ## Implementation Details
 
-At the moment, hyperparameters such as the number of layers, the number of neurons in each layer, and activation functions are hardcoded. I might parameterize it later, but my main goal for this project was to learn deep learning, so I'm content with where I am right now. I tested the model on the classic Optical Character Recognition problem using the MNIST hand-written digits dataset and was able to achieve 86.39% test accuracy using the following model architecture:
+At the moment, hyperparameters such as the number of layers, the number of neurons in each layer, and activation functions are hardcoded. I might parameterize it later, but my main goal for this project was to learn deep learning, so I'm content with where I am right now. I tested the model on the classic Optical Character Recognition problem using the MNIST hand-written digits dataset and was able to achieve 88.27% test accuracy using the following model architecture:
 
 - Input layer: 784 neurons
 - 1st hidden layer: 256 neurons, ReLu
@@ -52,8 +52,9 @@ At the moment, hyperparameters such as the number of layers, the number of neuro
 ## Goals
 
 - Once the implementation is done, test it on the MNIST hand-written digits dataset and get a relatively high accuracy (anything >80%)
-    - Update: DONE, achieved 86.39% test accuracy
-    - <img width="744" alt="Screenshot 2025-02-21 at 11 52 52 AM" src="https://github.com/user-attachments/assets/36ee0271-2f48-4ee4-8e3d-119b50593a55" />
+    - Update: DONE, achieved 88.27% test accuracy
+    - ![ffnn_perf2](https://github.com/user-attachments/assets/57211abd-9dd5-439c-b024-6172f963cf0f)
+
 
 - Explore some fun deep learning techniques (learning rate schedules, early stopping, different gradient descent variations, hyperparameter tuning, different initialization methods, etc.).
     - Update: DONE, tried various LR schedules, early stopping methods, initialization methods, activation functions, and model architectures. Did not implement any other optimizers though (like Adam)
