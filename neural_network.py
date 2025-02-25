@@ -37,8 +37,8 @@ class NeuralNetwork():
         # neural network specs
         self.numLayers = 5      # not including input layer
         self.alpha = 0.3      # TODO: update this alpha based on learning rate
-        self.threshold = 0.05    # TODO: update this
-        self.maxIterations = 100    # TODO: update this
+        self.threshold = 0.01    # TODO: update this
+        self.maxIterations = 600    # TODO: update this
         self.batchSize = 0.002    # a double representing batch sizes as a percentage of the original dataset size
         
         # hyperparameters for plateau LR scheduling
@@ -339,8 +339,12 @@ class NeuralNetwork():
             # update parameters
             self.applyGradientDescentStep(gradient)
 
+            gradient_norm = self.gradient_norm(gradient)
+
+            print("The gradient's norm is: ", gradient_norm)
+
             # check break conditions (either cost is low enough or we've reached the max number of iterations)
-            if (self.threshold >= cost or numIterations >= self.maxIterations):
+            if (self.threshold >= gradient_norm or numIterations >= self.maxIterations):
                 # print(self.bestModel)
                 self.firstBiasVector = self.bestModel[0]
                 self.firstWeightMatrix = self.bestModel[1]
@@ -361,6 +365,17 @@ class NeuralNetwork():
         
         print("Stochastic gradient descent complete!")
 
+    # Input: tuple of matrices and vectors making up the gradient vector 
+    # Output: a number representing the L2-norm of the gradient 
+    def gradient_norm(self, gradient):
+        sum = 0
+        
+        for i in range(len(gradient)):
+            squared = gradient[i] ** 2
+            sum_of_squared_entries = np.sum(squared)
+            sum += sum_of_squared_entries 
+        
+        return sum
 
     # Function: Prepare data for SGD and initiate it
     # Input: a 2D array where each row is a training image of length 784, and
